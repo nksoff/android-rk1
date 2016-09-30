@@ -39,7 +39,6 @@ public class MainActivity extends AppCompatActivity {
                 Intent intent = new Intent(MainActivity.this, WeatherIntentService.class);
                 intent.setAction(WeatherIntentService.ACTION_LOAD);
                 WeatherUtils.getInstance().schedule(MainActivity.this, intent);
-                startService(intent);
             }
         });
 
