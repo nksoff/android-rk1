@@ -19,17 +19,12 @@ import ru.mail.weather.lib.WeatherUtils;
 
 public class MainActivity extends AppCompatActivity {
 
-    private Intent ourIntent = null;
-    private boolean registered = false;
     private BroadcastReceiver receiver = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        ourIntent = new Intent(MainActivity.this, WeatherIntentService.class);
-        ourIntent.setAction(WeatherIntentService.ACTION_LOAD);
 
         findViewById(R.id.btn_city).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -41,22 +36,25 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.btn_update_background).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(!registered) {
-                    WeatherUtils.getInstance().schedule(MainActivity.this, ourIntent);
-                    startService(ourIntent);
-                    registered = true;
-                }
+                Intent intent = new Intent(MainActivity.this, WeatherIntentService.class);
+                intent.setAction(WeatherIntentService.ACTION_LOAD);
+                WeatherUtils.getInstance().schedule(MainActivity.this, intent);
+                startService(intent);
             }
         });
 
         findViewById(R.id.btn_no_update_background).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                WeatherUtils.getInstance().unschedule(MainActivity.this, ourIntent);
-                registered = false;
+                Intent intent = new Intent(MainActivity.this, WeatherIntentService.class);
+                intent.setAction(WeatherIntentService.ACTION_LOAD);
+                WeatherUtils.getInstance().unschedule(MainActivity.this, intent);
             }
         });
+    }
 
+    protected void onStart() {
+        super.onStart();
         final IntentFilter filter = new IntentFilter();
         filter.addAction(WeatherIntentService.ACTION_WEATHER_LOADED);
 
@@ -70,14 +68,12 @@ public class MainActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(MainActivity.this).registerReceiver(receiver, filter);
     }
 
-    @Override
-    protected void onDestroy() {
-        if(registered) {
+    protected void onStop() {
+        super.onStop();
+        if (receiver != null) {
             LocalBroadcastManager.getInstance(MainActivity.this).unregisterReceiver(receiver);
             receiver = null;
-            registered = false;
         }
-        super.onDestroy();
     }
 
     @Override
@@ -91,7 +87,9 @@ public class MainActivity extends AppCompatActivity {
         final Button cityButton = (Button) findViewById(R.id.btn_city);
         cityButton.setText(WeatherStorage.getInstance(MainActivity.this).getCurrentCity().toString());
 
-        startService(ourIntent);
+        Intent intent = new Intent(MainActivity.this, WeatherIntentService.class);
+        intent.setAction(WeatherIntentService.ACTION_LOAD);
+        startService(intent);
 
         onUpdate();
     }
